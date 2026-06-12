@@ -45,10 +45,7 @@ EMPTY_FIELDS: dict = {
     },
 }
 
-EXTRACTION_TOOL = {
-    "name": "record_fnol_fields",
-    "description": "Record the structured fields extracted from an FNOL document.",
-    "input_schema": {
+EXTRACTION_SCHEMA = {
         "type": "object",
         "properties": {
             "policyInformation": {
@@ -109,13 +106,20 @@ EXTRACTION_TOOL = {
             "assetDetails",
             "otherFields",
         ],
-    },
 }
 
 SYSTEM_PROMPT = """You are an insurance claims intake assistant. Extract FNOL (First Notice of Loss) \
-fields from the document text. Use null for any field not present in the document — never guess or \
-invent values. Normalize dates to YYYY-MM-DD and amounts to plain numbers (strip currency symbols \
-and thousands separators)."""
+fields from the document text and respond with ONLY a JSON object matching this schema (no prose, no \
+markdown fences):
+
+{schema}
+
+Use null for any field not present in the document — never guess or invent values. Normalize dates \
+to YYYY-MM-DD and amounts to plain numbers (strip currency symbols and thousands separators)."""
+
+# Provider-agnostic: any OpenAI-compatible API works. Defaults target Groq's free tier.
+DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
+DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
 
 def extract_fields(text: str) -> tuple[dict, str]:
@@ -123,7 +127,7 @@ def extract_fields(text: str) -> tuple[dict, str]:
 
     Returns (fields, method) where method is "llm" or "regex".
     """
-    if os.environ.get("ANTHROPIC_API_KEY"):
+    if os.environ.get("LLM_API_KEY"):
         try:
             return extract_with_llm(text), "llm"
         except Exception as exc:  # noqa: BLE001 - fall back on any API failure
@@ -132,27 +136,33 @@ def extract_fields(text: str) -> tuple[dict, str]:
 
 
 def extract_with_llm(text: str) -> dict:
-    import anthropic
+    from openai import OpenAI
 
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2048,
+    client = OpenAI(
+        api_key=os.environ["LLM_API_KEY"],
+        base_url=os.environ.get("LLM_BASE_URL", DEFAULT_BASE_URL),
+    )
+    response = client.chat.completions.create(
+        model=os.environ.get("LLM_MODEL", DEFAULT_MODEL),
         temperature=0,
-        system=SYSTEM_PROMPT,
-        tools=[EXTRACTION_TOOL],
-        tool_choice={"type": "tool", "name": "record_fnol_fields"},
+        max_tokens=2048,
+        response_format={"type": "json_object"},
         messages=[
-            {
-                "role": "user",
-                "content": f"Extract the FNOL fields from this document:\n\n{text}",
-            }
+            {"role": "system", "content": SYSTEM_PROMPT.format(schema=json.dumps(EXTRACTION_SCHEMA))},
+            {"role": "user", "content": f"Extract the FNOL fields from this document:\n\n{text}"},
         ],
     )
-    for block in response.content:
-        if block.type == "tool_use":
-            return _merge_into_template(block.input)
-    raise RuntimeError("No tool_use block in LLM response")
+    raw = response.choices[0].message.content
+    data = json.loads(_strip_code_fences(raw))
+    return _merge_into_template(data)
+
+
+def _strip_code_fences(raw: str) -> str:
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-zA-Z]*\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw)
+    return raw
 
 
 # ---------------------------------------------------------------------------

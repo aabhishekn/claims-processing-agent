@@ -29,7 +29,10 @@ st.title("🚗 Autonomous Insurance Claims Processing Agent")
 st.caption("Upload an FNOL (First Notice of Loss) document — the agent extracts fields, "
            "checks completeness, and routes the claim with an explanation.")
 
-mode = "LLM (Claude) + rules" if os.environ.get("ANTHROPIC_API_KEY") else "Regex fallback + rules (no API key set)"
+if os.environ.get("LLM_API_KEY"):
+    mode = f"LLM ({os.environ.get('LLM_MODEL', 'llama-3.3-70b-versatile')}) + rules"
+else:
+    mode = "Regex fallback + rules (no API key set)"
 st.sidebar.header("Agent")
 st.sidebar.write(f"**Extraction mode:** {mode}")
 st.sidebar.markdown(

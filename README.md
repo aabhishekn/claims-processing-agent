@@ -15,7 +15,7 @@ Built for the Synapx technical assessment.
  └──────────────┘
         │
         ▼
- ┌──────────────┐   Claude API (tool-use, temperature 0)
+ ┌──────────────┐   LLM via any OpenAI-compatible API (JSON mode, temperature 0)
  │  extract.py  │──► structured fields        ── falls back to a labeled-field
  └──────────────┘                                regex extractor if no API key
         │
@@ -35,9 +35,10 @@ Built for the Synapx technical assessment.
 
 ### Why hybrid LLM + rules?
 
-- **Extraction is fuzzy** — real FNOLs arrive as scanned forms, emails, call transcripts. An LLM handles messy, unstructured wording far better than regex. The LLM is constrained by a strict JSON tool schema and told to return `null` rather than guess.
+- **Extraction is fuzzy** — real FNOLs arrive as scanned forms, emails, call transcripts. An LLM handles messy, unstructured wording far better than regex. The LLM is constrained by a strict JSON schema and told to return `null` rather than guess.
+- **Provider-agnostic** — extraction talks to any OpenAI-compatible API via three env vars (`LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`). Defaults target Groq's free tier (`llama-3.3-70b-versatile`); xAI Grok, OpenAI, etc. work by changing the base URL and model.
 - **Routing is policy** — business rules must be auditable, testable, and deterministic. They live in plain Python (`route.py`) with unit tests, not in a prompt. The reasoning string cites exactly which rule fired.
-- **Graceful degradation** — without an `ANTHROPIC_API_KEY` the agent automatically uses a regex extractor for labeled-field documents, so the whole pipeline runs offline.
+- **Graceful degradation** — without an `LLM_API_KEY` the agent automatically uses a regex extractor for labeled-field documents, so the whole pipeline runs offline.
 
 ### Routing rules (precedence order)
 
@@ -81,7 +82,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Optional — enables LLM extraction (otherwise regex fallback is used):
-cp .env.example .env   # then add your ANTHROPIC_API_KEY
+cp .env.example .env   # then add your LLM_API_KEY (free key: https://console.groq.com)
 ```
 
 ## Run
@@ -120,7 +121,7 @@ Also handles a real **blank ACORD 2 Automobile Loss Notice PDF** gracefully: nea
 ```
 claims_agent/
   ingest.py     # PDF/TXT -> raw text
-  extract.py    # LLM extraction (Claude tool-use) + regex fallback, currency/date normalization
+  extract.py    # LLM extraction (OpenAI-compatible JSON mode) + regex fallback, normalization
   validate.py   # mandatory-field + consistency checks
   route.py      # deterministic routing rules engine
   agent.py      # pipeline orchestrator
