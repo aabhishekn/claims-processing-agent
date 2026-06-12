@@ -6,3 +6,4 @@ venv/
 outputs/
 .DS_Store
 .pytest_cache/
+.claude/
