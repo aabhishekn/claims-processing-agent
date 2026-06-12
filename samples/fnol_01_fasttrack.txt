@@ -1,0 +1,23 @@
+FIRST NOTICE OF LOSS (FNOL) - AUTOMOBILE
+Reported via: Customer Portal
+
+Policy Number: POL-2026-88341
+Policyholder Name: Rajesh Kumar Sharma
+Effective Dates: 2026-01-01 to 2026-12-31
+
+Incident Date: 2026-06-02
+Incident Time: 08:45 AM
+Location: Andheri East, Mumbai, Maharashtra
+Description: While reversing out of the office parking lot, the insured vehicle scraped against a concrete pillar, causing scratches and a dent on the rear left door panel.
+
+Claimant: Rajesh Kumar Sharma
+Third Parties: None
+Contact Details: +91 98200 11223, rajesh.sharma@example.com
+
+Asset Type: Private Car - Hyundai Creta 2023
+Asset ID: MH02-AB-4455 / VIN MALC381CLNM123456
+Estimated Damage: Rs. 18,000
+
+Claim Type: Own Damage
+Attachments: photos_rear_door.zip, parking_cctv.mp4
+Initial Estimate: Rs. 17,500
