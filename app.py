@@ -79,7 +79,7 @@ if uploaded:
                     {
                         "Section": section,
                         "Field": key,
-                        "Value": value if value is not None else "—",
+                        "Value": str(value) if value is not None else "—",
                     }
                 )
         st.dataframe(rows, use_container_width=True, hide_index=True)
